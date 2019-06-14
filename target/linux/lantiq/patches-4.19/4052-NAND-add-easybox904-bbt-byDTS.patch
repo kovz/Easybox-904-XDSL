@@ -1,6 +1,6 @@
-diff -aurN a/drivers/mtd/nand/nand_bbt.c b/drivers/mtd/nand/nand_bbt.c
---- a/drivers/mtd/nand/nand_bbt.c	2019-02-26 10:04:39.551525839 +0000
-+++ b/drivers/mtd/nand/nand_bbt.c	2019-02-26 10:04:39.697524014 +0000
+diff -aurN a/drivers/mtd/nand/raw/nand_bbt.c b/drivers/mtd/nand/raw/nand_bbt.c
+--- a/drivers/mtd/nand/raw/nand_bbt.c	2019-02-26 10:04:39.551525839 +0000
++++ b/drivers/mtd/nand/raw/nand_bbt.c	2019-02-26 10:04:39.697524014 +0000
 @@ -76,6 +76,32 @@
  #define BBT_ENTRY_MASK		0x03
  #define BBT_ENTRY_SHIFT		2

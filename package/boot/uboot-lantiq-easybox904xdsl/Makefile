@@ -26,15 +26,15 @@ TAR_CMD=$(HOST_TAR) -C $(1) --strip 1 -xf -
 define Package/$(PKG_NAME)
 	SECTION:=boot
 	CATEGORY:=Boot Loaders
-	TITLE:=U-Boot for Arcadyan VGV952CJW33
+	TITLE:=U-Boot for Arcadyan VGV952CJW33 and MRL925AKW33 
 	MENU:=1
-	DEPENDS:=@TARGET_ifxmips||TARGET_ifxcpe||TARGET_ltqcpe||TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir||TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir_smp||TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir_vpe
+	DEPENDS:=@TARGET_ifxmips||TARGET_ifxcpe||TARGET_ltqcpe||TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir||TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir_smp||TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir_vpe||TARGET_lantiq_xrx200_DEVICE_lantiq_mrl952akw33-e-ir||TARGET_lantiq_xrx200_DEVICE_lantiq_mrl952akw33-e-ir_smp||TARGET_lantiq_xrx200_DEVICE_lantiq_mrl952akw33-e-ir_vpe
 	URL:=http://www.denx.de/wiki/UBoot/WebHome
 endef
 
 
 define Package/$(PKG_NAME)/description
-This is a U-Boot bootloader for the EasyBox 904 (Arcadyan VGV952CJW33).
+This is a U-Boot bootloader for the EasyBox 904xDSL/LTE (Arcadyan VGV952CJW33/MRL952AKW33).
 
 It will be built with the U-Boot version and the adaptions as published by
 vendor Arcadyan, plus these changes made for OpenWrt:
@@ -61,6 +61,18 @@ UBOOT_PLATFORM:=vr9
 endif
 
 ifdef CONFIG_TARGET_lantiq_xrx200_DEVICE_lantiq_vgv952cjw33-e-ir
+UBOOT_PLATFORM:=vr9
+endif
+
+ifdef CONFIG_TARGET_lantiq_xrx200_DEVICE_lantiq_mrl952akw33-e-ir_vpe
+UBOOT_PLATFORM:=vr9
+endif
+
+ifdef CONFIG_TARGET_lantiq_xrx200_DEVICE_lantiq_mrl952akw33-e-ir_smp
+UBOOT_PLATFORM:=vr9
+endif
+
+ifdef CONFIG_TARGET_lantiq_xrx200_DEVICE_lantiq_mrl952akw33-e-ir
 UBOOT_PLATFORM:=vr9
 endif
 

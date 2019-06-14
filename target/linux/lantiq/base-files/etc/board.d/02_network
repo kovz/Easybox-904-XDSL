@@ -233,6 +233,14 @@ lantiq,vgv952cjw33-e-ir*)
 	"0:lan" "1:lan" "2:lan" "3:lan" "6@eth0"
 	;;
 
+lantiq,mrl952akw33-e-ir*)
+	lan_mac=$(mtd_get_mac_ascii ubootconfig ethaddr)
+	wan_mac=$(macaddr_add "$lan_mac" 1)
+	interface_wan="wwan0"
+	ucidef_add_switch "switch0" \
+	"0:lan" "1:lan" "2:lan" "3:lan" "5:lan" "6t@eth0"
+    ;;
+
 arcadyan,vgv7519-nor|arcadyan,vgv7519-brn)
 	wan_mac=$(mtd_get_mac_binary board_config 22)
 	ucidef_add_switch "switch0" \
@@ -257,16 +265,20 @@ buffalo,wbmr-300hpd)
 
 esac
 
-ls /lib/modules/$(uname -r)/ltq_atm* 1> /dev/null 2>&1 && \
+if [ interface_wan=="dsl0" ];then
+	ls /lib/modules/$(uname -r)/ltq_atm* 1> /dev/null 2>&1 && \
 	ucidef_add_atm_bridge "$vpi" "$vci" "$encaps" "$payload" "dsl"
 
-if lantiq_is_vdsl_system; then
-	ucidef_add_vdsl_modem "$annex" "$tone" "$xfer_mode"
-else
-	ucidef_add_adsl_modem "$annex" "/lib/firmware/adsl.bin"
-fi
+	if lantiq_is_vdsl_system; then
+		ucidef_add_vdsl_modem "$annex" "$tone" "$xfer_mode"
+	else
+		ucidef_add_adsl_modem "$annex" "/lib/firmware/adsl.bin"
+	fi
 
-ucidef_set_interface_wan "$interface_wan" "pppoe"
+	ucidef_set_interface_wan "$interface_wan" "pppoe"
+else
+	ucidef_set_interface_wan "$interface_wan" "dhcp"
+fi
 
 [ -n "$lan_mac" ] && ucidef_set_interface_macaddr "lan" "$lan_mac"
 [ -n "$wan_mac" ] && ucidef_set_interface_macaddr "wan" "$wan_mac"

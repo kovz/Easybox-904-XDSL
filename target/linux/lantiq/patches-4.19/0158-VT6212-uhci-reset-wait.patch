@@ -1,0 +1,11 @@
+--- a/drivers/usb/host/uhci-hcd.c
++++ b/drivers/usb/host/uhci-hcd.c
+@@ -190,7 +190,7 @@
+ 	 */
+ 	uhci_writew(uhci, USBCMD_HCRESET, USBCMD);
+ 	mb();
+-	udelay(5);
++	udelay(50);
+ 	if (uhci_readw(uhci, USBCMD) & USBCMD_HCRESET)
+ 		dev_warn(uhci_dev(uhci), "HCRESET not completed yet!\n");
+ 

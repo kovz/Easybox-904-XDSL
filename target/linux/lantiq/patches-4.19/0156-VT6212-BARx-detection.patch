@@ -1,0 +1,12 @@
+--- a/drivers/pci/probe.c
++++ b/drivers/pci/probe.c
+@@ -211,8 +211,8 @@
+ 	 * I don't know how l can have all bits set.  Copied from old code.
+ 	 * Maybe it fixes a bug on some ancient platform.
+ 	 */
+-	if (l == 0xffffffff)
+-		l = 0;
++	if (l == 0xffffffff || l == sz)
++		l &= ~PCI_BASE_ADDRESS_MEM_MASK;// clear address bits, keep type info
+ 
+ 	if (type == pci_bar_unknown) {

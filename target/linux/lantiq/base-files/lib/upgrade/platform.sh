@@ -18,7 +18,8 @@ platform_do_upgrade() {
 	bt,homehub-v5a|\
 	zyxel,p-2812hnu-f1|\
 	zyxel,p-2812hnu-f3|\
-	lantiq,vgv952cjw33-e-ir*)
+	lantiq,vgv952cjw33-e-ir*|\
+	lantiq,mrl952akw33-e-ir*)
 		nand_do_upgrade $1
 		;;
 	*)
@@ -32,7 +33,8 @@ platform_nand_pre_upgrade() {
 	echo "platform_nand_pre_upgrade()"
 
 	case "$board" in
-	lantiq,vgv952cjw33-e-ir* )
+	lantiq,vgv952cjw33-e-ir*|\
+	lantiq,mrl952akw33-e-ir* )
 		# This is a global defined in nand.sh, sets another VID header offset than default.
 		# (now disabled, as it looks like eb904 can handle 512 byte subpages as reported by driver)
 		#echo "Set header offset"

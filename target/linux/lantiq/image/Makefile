@@ -660,6 +660,56 @@ define Device/lantiq_vgv952cjw33-e-ir_smp
 endef
 TARGET_DEVICES += lantiq_vgv952cjw33-e-ir_smp
 
+define Device/lantiq_mrl952akw33-e-ir_vpe
+  $(Device/NAND)
+  BOARD_NAME := MRL952AKW33-E-IR
+  DEVICE_DTS := MRL952AKW33-E-IR_VPE
+  DEVICE_TITLE := Easybox 904LTE / Arcadyan MRL952AKW33-E-IR with Telephon support
+  DEVICE_PACKAGES :=  kmod-usb-dwc2 kmod-ltq-tapi kmod-ltq-vmmc wpad-basic kmod-usb2-pci usb-modeswitch kmod-mii kmod-usb-net kmod-usb-wdm kmod-usb-net-qmi-wwan uqmi
+  SUPPORTED_DEVICES += MRL952AKW33-E-IR_VPE
+# If the rootfs/squashfs should be placed in mtd1: flashing can be done with the reset-button-during-
+# power-on recovery procedure using fullimage.img, or with sysupgrade procedure using sysupgrade.bin.
+# In the .dts file, partition mtd1 MUST be named 'rootfs', and partition mtd12 MUST NOT be named 'ubi'.
+  IMAGES := sysupgrade.bin fullimage.img
+  IMAGE/fullimage.img := append-uImage-rootfs | pad-offset 16 0 | append-kernel
+# If the rootfs/squashfs should be placed in an UBI volume in mtd12:
+# flashing can be done with the sysupgrade procedure.
+# In the .dts file, partition mtd1 MUST NOT be named 'rootfs', and partition mtd12 MUST be named 'ubi'.
+#  IMAGES := sysupgrade.bin
+# Generate an initramfs file containing an additional dummy squashfs image. This way the original vendor U-Boot
+# can flash it to the mtd2 kernel partition via the reset-button-press-during-power-on recovery procedure
+# if 1) size is max 0x400000 bytes and 2) the initramfs file is manually renamed to fullimage.img.
+# BTW: the uboot-lantiq-easybox904xdsl U-Boot allows larger sizes and starts the initramfs directly without flashing.
+# KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | pad-offset 16 0 | append-uImage-dummyrootfs
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | pad-offset 16 0 | append-uImage-dummyrootfs | check-size 0x400000
+endef
+TARGET_DEVICES += lantiq_mrl952akw33-e-ir_vpe
+
+define Device/lantiq_mrl952akw33-e-ir_smp
+  $(Device/NAND)
+  BOARD_NAME := MRL952AKW33-E-IR
+  DEVICE_DTS := MRL952AKW33-E-IR_SMP
+  DEVICE_TITLE := Easybox 904LTE / Arcadyan MRL952AKW33-E-IR with SMP support
+  DEVICE_PACKAGES := kmod-usb-dwc2 wpad-basic kmod-usb2-pci usb-modeswitch kmod-mii kmod-usb-net kmod-usb-wdm kmod-usb-net-qmi-wwan uqmi
+  SUPPORTED_DEVICES += MRL952AKW33-E-IR_SMP
+# If the rootfs/squashfs should be placed in mtd1: flashing can be done with the reset-button-during-
+# power-on recovery procedure using fullimage.img, or with sysupgrade procedure using sysupgrade.bin.
+# In the .dts file, partition mtd1 MUST be named 'rootfs', and partition mtd12 MUST NOT be named 'ubi'.
+ IMAGES := sysupgrade.bin fullimage.img
+ IMAGE/fullimage.img := append-uImage-rootfs | pad-offset 16 0 | append-kernel
+# If the rootfs/squashfs should be placed in an UBI volume in mtd12:
+# flashing can be done with the sysupgrade procedure.
+# In the .dts file, partition mtd1 MUST NOT be named 'rootfs', and partition mtd12 MUST be named 'ubi'.
+#  IMAGES := sysupgrade.bin
+# Generate an initramfs file containing an additional dummy squashfs image. This way the original vendor U-Boot
+# can flash it to the mtd2 kernel partition via the reset-button-press-during-power-on recovery procedure
+# if 1) size is max 0xr400000 bytes and 2) the initramfs file is manually renamed to fullimage.img.
+# BTW: the uboot-lantiq-easybox904xdsl U-Boot allows larger sizes and starts the initramfs directly without flashing.
+# KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | pad-offset 16 0 | append-uImage-dummyrootfs
+  KERNEL_INITRAMFS := kernel-bin | append-dtb | lzma | uImage lzma | pad-offset 16 0 | append-uImage-dummyrootfs | check-size 0x400000
+endef
+TARGET_DEVICES += lantiq_mrl952akw33-e-ir_smp
+
 define Device/netgear_dm200
   DEVICE_DTS := DM200
   IMAGES := sysupgrade.bin factory.img

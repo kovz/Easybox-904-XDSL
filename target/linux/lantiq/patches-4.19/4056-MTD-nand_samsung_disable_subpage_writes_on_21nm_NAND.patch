@@ -1,0 +1,47 @@
+From e81d56d247a8c93d24e03be378d1748f3e044e6b Mon Sep 17 00:00:00 2001
+From: Ladislav Michl <ladis@linux-mips.org>
+Date: Tue, 9 Jan 2018 14:19:11 +0100
+Subject: [PATCH] VGV952CJW33-E-IR: mtd: nand: samsung: Disable subpage writes on 21nm NAND.
+
+Some Samsung SLC NAND are manufactured using the 21nm process.
+They does not supports partial page programming, so disable subpage writes
+for it. Manufacturing process is stored in lowest two bits of 5th ID
+byte.
+
+This patch is derived and adapted from the upstream patch which
+handles a different samsung NAND flash devie (K9F1G08U0E) and is named
+mtd: nand: samsung: Disable subpage writes on E-die NAND
+and available since kernel release v4.16.
+---
+ drivers/mtd/nand/nand_samsung.c | 22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+--- a/drivers/mtd/nand/raw/nand_samsung.c
++++ b/drivers/mtd/nand/raw/nand_samsung.c
+@@ -93,21 +93,14 @@ static void samsung_nand_decode_id(struc
+ 		nand_decode_ext_id(chip);
+ 
+ 		if (nand_is_slc(chip)) {
+-			switch (chip->id.data[1]) {
++			/* 21nm chips do not support subpage write */
++			if (chip->id.len > 4 &&
++			    (chip->id.data[4] & GENMASK(1, 0)) == 0x1)
++				chip->options |= NAND_NO_SUBPAGE_WRITE;
+ 			/* K9F4G08U0D-S[I|C]B0(T00) */
+-			case 0xDC:
++			if(chip->id.data[1] == 0xDC) {
+ 				chip->ecc_step_ds = 512;
+ 				chip->ecc_strength_ds = 1;
+-				break;
+-
+-			/* K9F1G08U0E 21nm chips do not support subpage write */
+-			case 0xF1:
+-				if (chip->id.len > 4 &&
+-				    (chip->id.data[4] & GENMASK(1, 0)) == 0x1)
+-					chip->options |= NAND_NO_SUBPAGE_WRITE;
+-				break;
+-			default:
+-				break;
+ 			}
+ 		}
+ 	}

@@ -7,7 +7,8 @@
 board=$(board_name)
 
 case "$board" in
-lantiq,vgv952cjw33-e-ir*)
+lantiq,vgv952cjw33-e-ir*|\
+lantiq,mrl952akw33-e-ir*)
         wlan_dev=$(uci get network.wlan_dev.name)
         if [ "$wlan_dev" = "eth0.66" ]; then
            echo "wlan seems to intially setup - don't touch config"

@@ -1,0 +1,413 @@
+#include "vr9.dtsi"
+
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/mips/lantiq_rcu_gphy.h>
+
+
+/ {
+	memory@0 {
+		reg = <0x0 0x8000000>;
+	};
+
+	gpio-keys-polled {
+		compatible = "gpio-keys-polled";
+		#address-cells = <1>;
+	 	#size-cells = <0>;
+		poll-interval = <100>;
+		rfkill {
+			label = "wps";
+			gpios = <&gpio 41 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_WPS_BUTTON>;
+		};
+		reset {
+			label = "reset";
+			gpios = <&gpio 40 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_RESTART>;
+		};
+	};
+
+	usb1_vbus: regulator-usb1-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_1_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 5 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	usb2_vbus: regulator-usb2-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_2_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 14 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+// Power supply for USB port on VT6212. We can control it, with VT6212 so make it on permanently.
+	usb3_vbus: regulator-usb3-vbus {
+		compatible = "regulator-fixed";
+
+		regulator-name = "USB_3_VBUS";
+
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+
+		gpio = <&gpio 33 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		regulator-always-on;
+	};
+
+	gpio-leds {
+		compatible = "gpio-leds";
+
+		power_green: power {
+		label = "VGV952CJW33:red:power";
+		gpios = <&gpio 31 GPIO_ACTIVE_HIGH>;
+		default-state = "keep";
+		};
+	};
+	
+    i2c {
+        /* touch buttons located on GPIOs 1, 11, 12, 22*/
+		compatible = "i2c-gpio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		gpios = <&gpio 11 GPIO_ACTIVE_HIGH /* sda */
+			&gpio 12 GPIO_ACTIVE_HIGH /* scl */>;
+		//i2c-gpio,sda-open-drain;
+		//i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <5>;
+		/* Add touch panel Support */
+		tp: eb904tp@0x14 {
+			compatible = "lantiq,eb904_keypad";
+			reg = <0x14>;
+			interrupt-parent = <&icu0>;
+			interrupts = <135>;
+			eb904,interrupt-gpio = <&gpio  1 GPIO_ACTIVE_HIGH /* EXIN */>;
+			eb904,ctrl-rst-gpio = <&gpio 22 GPIO_ACTIVE_LOW /* rst */>;
+			eb904,alphas = /bits/ 8
+				 <0x07 /* left */
+				  0x0a /* down */
+				  0x0a /* right */
+				  0x0a /* ok */
+				  0x07 /* up */
+			>;
+			keypad,num-rows = <3>;
+			keypad,num-columns = <3>;
+			linux,keymap = <
+				    MATRIX_KEY(0x0, 0x1, KEY_UP)         /* ROW0, COL1 */
+				    MATRIX_KEY(0x1, 0x0, KEY_LEFT)       /* ROW1, COL0 */
+				    MATRIX_KEY(0x1, 0x1, KEY_ENTER)      /* ROW1, COL1 */
+				    MATRIX_KEY(0x1, 0x2, KEY_RIGHT)      /* ROW1, COL2 */
+				    MATRIX_KEY(0x2, 0x1, KEY_DOWN)       /* ROW2, COL1 */
+				    >;
+		};
+	};
+
+	mdio: mdio {
+		compatible = "lantiq,xrx200-mdio";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		phy0: ethernet-phy@0 {
+			reg = <0x0>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy1: ethernet-phy@1 {
+			reg = <0x1>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy11: ethernet-phy@11 {
+			reg = <0x11>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+		phy13: ethernet-phy@13 {
+			reg = <0x13>;
+			compatible = "lantiq,phy11g", "ethernet-phy-ieee802.3-c22";
+		};
+	};
+};
+
+//&vmmc {
+//	status = "okay";
+//	gpios = <&gpio 37 GPIO_ACTIVE_HIGH>; //reset_slic! Check for LTE
+//};
+
+&localbus {
+    //	#address-cells = <2>;					// Just for info. From vr9.dtsi
+    //	#size-cells = <1>;
+    //	ranges = <0 0 0x0       0x3ffffff			// addrsel0	0x3ffffff and 0x4000010 in vr9.dtsi seem to be wrong, because these are size
+    //    	  1 0 0x4000000 0x4000010>;			// addrsel1	parameters. Not really a problem; the drivers we have use their own hardcoded values
+
+	ranges = <0 0 0x0       0x2000000			// addrsel0	Was set up this way by arcadian eb904 U-Boot for nand. Not used by eb904 linux
+		  1 0 0x2000000 0x1000000			// addrsel1	Size 0x1000000 hardcoded in xway_nand.c. Excessive, as first 0x80 is used only
+		  2 0 0x3000000 0x0000800>;			// addrsel2	Size 0x800 hardcoded in display driver. This is the min size supported by ebu
+
+	nand@1 {						// @1 because using ebu BUSCON1/ADDSEL1
+		compatible = "lantiq,nand-xway";
+		reg = <1 0x0 0x80>;				// Only adresses 0x0..0x7F needed (but driver ignores size 0x80 and tells ebu to map 0x1000000)
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		lantiq,cs = <1>;				// Seems to be needed (EASY80920NAND.dts)
+
+		nand-on-flash-bbt;
+		customized-samsung-K9F4G08U0x;
+
+		partitions {
+		compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+		partition@0 {
+				label = "uboot";
+				reg = <0x0 0x40000>;
+			};
+
+			partition@40000 {
+				label = "rootfs";		// Called "rootfs" in original u-boot env.
+				reg = <0x40000 0x1E00000>;	// Auto mounted as rootfs if no UBI volume named "rootfs" exists
+			};
+
+			partition@1E40000 {
+				label = "kernel";		// Called "kernel" in original u-boot env.
+				reg = <0x1E40000 0x400000>;
+			};
+
+			partition@2240000 {
+				label = "rootfs2";
+				reg = <0x2240000 0x1e00000>;
+			};
+
+			partition@4040000 {
+				label = "kernel2";
+				reg = <0x4040000 0x400000>;
+			};
+
+			partition@4440000 {
+				label = "sysconfig";
+				reg = <0x4440000 0x100000>;
+			};
+
+			partition@4540000 {
+				label = "ubootconfig";
+				reg = <0x4540000 0x100000>;
+			};
+
+			partition@4640000 {
+				label = "fwdiag";
+				reg = <0x4640000 0xC0000>;
+			};
+
+			partition@4700000 {
+				label = "lcdimage";
+				reg = <0x4700000 0x300000>;
+			};
+
+			partition@4A00000 {
+				label = "mfgconfig";
+				reg = <0x4A00000 0x100000>;
+			};
+
+			partition@4B00000 {
+				label = "sipdata";
+				reg = <0x4B00000 0x100000>;
+			};
+
+			partition@4C00000 {
+				label = "voice";
+				reg = <0x4C00000 0x4000000>;
+			};
+
+			partition@8C00000 {			// Called "misc" in original u-boot env.
+				label = "misc";			// Rename to "ubi" for auto ubi attachment and usage of rootfs, rootfs_data, kernel volumes
+				reg = <0x8C00000 0x15300000>;	// Rename to "firmware" for special squashfs-rootfs/jffs2-rootfs_data treatment
+			};
+
+			partition@1DF00000 {
+				label = "ltefw";
+    			reg = <0x1DF00000 0x2000000>;
+			};
+            partition@1FF00000 {
+                label = "mystery";      // Missing in original u-boot environment, seems to be empty (erased)
+                reg = <0x1FF00000 0x100000>;
+            };
+
+		};
+	};
+    
+	display@2 {						// @2 because using ebu BUSCON2/ADDSEL2. Name not 'easybox904-display',
+		compatible = "ilitek,ili9341_eb904";		// see 'Node Names' at https://elinux.org/Device_Tree_Usage
+		reg = <2 0x0 0x4>;				// Size 0x4 contains 2 byte data and 2 byte command registers
+		status = "okay";
+		rotate = <270>;
+		fps = <30>;
+		bgr;
+		buswidth = <8>;
+		reset-gpios = <&gpio 6 GPIO_ACTIVE_HIGH>;
+		led-gpios = <&gpio 28 GPIO_ACTIVE_HIGH>;
+		debug = <1>;
+	};
+};
+
+/*
+*  Following is the very experimental part which is broken and requires much more elaboration
+*/
+
+&gpio {
+	pinctrl-names = "default";
+	pinctrl-0 = <&state_default>;
+
+	state_default: pinmux {
+		mdio {
+			lantiq,groups = "mdio";
+			lantiq,function = "mdio";
+		};
+
+		lte-rst {
+		   	lantiq,pins = "io20";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <2>;
+		};
+		pci_rst {
+			lantiq,pins = "io21";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <2>;
+		};
+		pci_in {
+			lantiq,groups = "req3";
+			lantiq,function = "pci";
+			lantiq,pull = <2>;
+			lantiq,output = <0>;
+		};
+		pci_out {
+			lantiq,groups = "gnt3";
+			lantiq,function = "pci";
+			lantiq,open-drain = <1>;
+			lantiq,output = <1>;
+		};
+
+		tp-rst {
+		   	lantiq,pins = "io22";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <2>;
+		};
+
+		inic-rst {
+		   	lantiq,pins = "io30";
+			lantiq,output = <1>;
+			lantiq,open-drain = <0>;
+			lantiq,pull = <2>;
+		};
+
+		tp_exin {
+			lantiq,groups = "exin1";
+			lantiq,function = "exin";
+		};
+
+		conf_tp {
+			lantiq,pins = "io1"; /* exin1 */
+			lantiq,pull = <0>;
+		};
+
+// Seems that original LTE fw uses this pin as SMI# interrupt.
+// Modern UHCI driver disable this functionality. 
+		ehci_exin {
+//			lantiq,groups = "exin3";
+//			lantiq,function = "exin";
+		   	lantiq,pins = "io39";
+			lantiq,pull = <2>;
+			lantiq,output = <1>;
+		};
+	};
+};
+
+&usb_phy0 {
+	status = "okay";
+};
+
+&usb_phy1 {
+	status = "okay";
+};
+
+&usb0 {
+	status = "okay";
+	vbus-supply = <&usb1_vbus>;
+};
+
+&usb1 {
+	status = "okay";
+	vbus-supply = <&usb2_vbus>;
+};
+
+&eth0 {
+	lan: interface@0 {
+		compatible = "lantiq,xrx200-pdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0>;
+		mac-address = [ 00 11 22 33 44 55 ];
+		lantiq,switch;
+		ethernet@0 { // external PHY
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <0>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy0>;
+			
+		};
+		ethernet@1 { // external PHY
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <1>;
+			phy-mode = "rgmii";
+			phy-handle = <&phy1>;
+			
+		};
+        ethernet@3 { //internal PHY
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <3>;
+			phy-mode = "gmii";
+			phy-handle = <&phy11>;
+		};
+        ethernet@4 { // internal PHY
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <4>;
+			phy-mode = "gmii";
+			phy-handle = <&phy13>;
+		};
+		/* rt3883 soc */
+		ethernet@5 {
+			compatible = "lantiq,xrx200-pdi-port";
+			reg = <5>;
+			phy-mode = "rgmii";
+			tx-delay = <3>;
+			fixed-link {
+				speed = <1000>;
+				full-duplex;
+			};
+        };
+	};
+};
+
+&pci0 {
+	status = "ok";
+	gpio-reset = <&gpio 21 GPIO_ACTIVE_HIGH>;
+	interrupt-map-mask = <0xfb00 0x0 0x0 0x7>;
+	interrupt-map = <   0x7000 0 0 1 &icu0 30
+						0x7100 0 0 2 &icu0 40
+						0x7200 0 0 3 &icu0 41 
+	>; /* slot 14, irq 40 */
+	req-mask = <0x4>; /* GNT3 */
+};
+
+&pcie0 {
+    status = "disabled";
+};
